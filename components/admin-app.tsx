@@ -180,12 +180,6 @@ async function createPdf(round: BookingRound, bookings: BookingRecord[]) {
   document.save(`${round.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-booking-report.pdf`)
 }
 
-const VALID_SECTIONS: AdminSection[] = ['overview', 'bookings', 'rounds', 'random', 'settings']
-function hashToSection(hash: string): AdminSection {
-  const val = hash.replace('#', '')
-  return (VALID_SECTIONS.includes(val as AdminSection) ? val : 'overview') as AdminSection
-}
-
 export function AdminApp() {
   const [section, setSection] = useState<AdminSection>('overview')
   const [selectedRoundId, setSelectedRoundId] = useState('')
@@ -467,31 +461,9 @@ export function AdminApp() {
     { id: 'settings', label: 'Settings', icon: Settings2 },
   ]
 
-  // Keep section in sync with the browser back/forward buttons.
-  useEffect(() => {
-    // Read initial hash on mount — do NOT push to history, just set state.
-    const initial = hashToSection(window.location.hash)
-    if (initial !== 'overview') setSection(initial)
-
-    function onPopState() {
-      setSection(hashToSection(window.location.hash))
-      setActionMessage('')
-    }
-    window.addEventListener('popstate', onPopState)
-    return () => window.removeEventListener('popstate', onPopState)
-  }, [])
-
   function selectSection(next: AdminSection) {
     setSection(next)
     setActionMessage('')
-    // Use replaceState for overview (the default), pushState for all others
-    // so the back button skips straight past overview back to wherever the
-    // user came from, rather than bouncing between overview and overview.
-    if (next === 'overview') {
-      window.history.replaceState(null, '', '/admin')
-    } else {
-      window.history.pushState(null, '', `/admin#${next}`)
-    }
   }
 
   if (isLoading && !data) {
