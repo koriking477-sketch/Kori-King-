@@ -46,7 +46,7 @@ export function AdminLogin({ onAuthenticated, initialNotice = '' }: Props) {
     } catch (cause) {
       setIsError(true)
       const message = cause instanceof Error ? cause.message : 'Unexpected authentication error.'
-      setNotice(message.startsWith('Admin access') ? message : friendlyAuthError(message))
+      setNotice(message)
     } finally {
       setIsWorking(false)
     }
