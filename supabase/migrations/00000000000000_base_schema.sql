@@ -127,7 +127,8 @@ begin
 
   if not exists (
     select 1 from public.booking_rounds
-    where id = p_round_id and status = 'open'
+    where id = p_round_id
+      and status <> 'archived'
       and opens_at <= now() and closes_at > now()
   ) then
     raise exception using errcode = '23514', message = 'round_not_open';
