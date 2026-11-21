@@ -467,15 +467,9 @@ export function AdminApp() {
     { id: 'settings', label: 'Settings', icon: Settings2 },
   ]
 
-  function selectSection(next: AdminSection) {
-    setSection(next)
-    setActionMessage('')
-    window.history.pushState(null, '', `/admin#${next}`)
-  }
-
   // Keep section in sync with the browser back/forward buttons.
   useEffect(() => {
-    // Read initial hash on mount (safe — only runs in the browser).
+    // Read initial hash on mount — do NOT push to history, just set state.
     const initial = hashToSection(window.location.hash)
     if (initial !== 'overview') setSection(initial)
 
@@ -486,6 +480,19 @@ export function AdminApp() {
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
+
+  function selectSection(next: AdminSection) {
+    setSection(next)
+    setActionMessage('')
+    // Use replaceState for overview (the default), pushState for all others
+    // so the back button skips straight past overview back to wherever the
+    // user came from, rather than bouncing between overview and overview.
+    if (next === 'overview') {
+      window.history.replaceState(null, '', '/admin')
+    } else {
+      window.history.pushState(null, '', `/admin#${next}`)
+    }
+  }
 
   if (isLoading && !data) {
     return <main className="admin-login-shell"><section className="admin-login-card"><p className="admin-eyebrow">PERSONAL INFO ADMIN</p><h1 className="admin-login-title">Loading workspace</h1><p className="admin-login-subtitle">Checking your secure session…</p></section></main>
