@@ -56,20 +56,18 @@ export async function POST(request: NextRequest) {
   // Check admin membership.
   const { createAdminClient } = await import('@/lib/supabase/admin')
   const admin = createAdminClient()
-  const { data: membership } = await admin
+  const { data: membership, error: membershipError } = await admin
     .from('admin_members')
     .select('user_id')
     .eq('user_id', data.user.id)
     .maybeSingle()
 
-  if (!membership) {
-    return NextResponse.json({ error: 'Admin access is not enabled for this account.' }, { status: 403 })
+  if (membershipError) {
+    return NextResponse.json({ error: `Membership check failed: ${membershipError.message}` }, { status: 500 })
   }
 
-  // Check optional ADMIN_EMAIL lock.
-  const configuredEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase()
-  if (configuredEmail && data.user.email?.trim().toLowerCase() !== configuredEmail) {
-    return NextResponse.json({ error: 'Admin access is not enabled for this account.' }, { status: 403 })
+  if (!membership) {
+    return NextResponse.json({ error: `Admin access is not enabled for this account. (uid=${data.user.id})` }, { status: 403 })
   }
 
   // The storage key @supabase/ssr uses is `sb-<project-ref>-auth-token`.
