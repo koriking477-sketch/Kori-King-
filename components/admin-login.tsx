@@ -3,7 +3,6 @@
 import { useState, type FormEvent } from 'react'
 import { ArrowLeft, ArrowRight, LockKeyhole } from 'lucide-react'
 import { BrandMark } from '@/components/brand-mark'
-import { createClient } from '@/lib/supabase/client'
 
 type Props = { onAuthenticated: () => Promise<void>; initialNotice?: string }
 
@@ -30,10 +29,19 @@ export function AdminLogin({ onAuthenticated, initialNotice = '' }: Props) {
     setIsWorking(true)
 
     try {
-      const supabase = createClient()
-      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
-      if (error) throw error
-      if (!data.session) throw new Error('Please check your inbox and confirm your email before signing in.')
+      // Sign in server-side so cookies are written into the HTTP response,
+      // which is more reliable than writing to document.cookie from the browser.
+      const response = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: email.trim(), password }),
+      })
+      const payload = await response.json() as { ok?: boolean; error?: string }
+      if (!response.ok) {
+        const msg = payload.error ?? 'Unexpected authentication error.'
+        throw new Error(msg)
+      }
       await onAuthenticated()
     } catch (cause) {
       setIsError(true)

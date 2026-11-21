@@ -253,23 +253,9 @@ export function AdminApp() {
 
   if (error?.status === 401) {
     return <AdminLogin initialNotice={authNotice} onAuthenticated={async () => {
-      // The server decides who is an admin (membership in `admin_members`).
-      // Verifying here means a valid Supabase login without admin rights is
-      // signed straight back out instead of seeing the workspace.
-      const response = await fetch('/api/admin/overview', { cache: 'no-store', credentials: 'same-origin' })
-      if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          try {
-            await createClient().auth.signOut()
-          } catch {
-            // Ignore sign-out failures; the server session is still rejected.
-          }
-          throw new Error('Admin access is not enabled for this account.')
-        }
-        throw new Error('Admin access could not be verified. Please try again.')
-      }
-      setAuthNotice('')
-      await mutate()
+      // The /api/auth/signin route already verified admin membership and wrote
+      // session cookies into the HTTP response. A hard reload picks them up.
+      window.location.replace('/admin')
     }} />
   }
 
