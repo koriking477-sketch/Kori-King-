@@ -12,7 +12,9 @@ export async function createClient() {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
+      maxAge: 60 * 60 * 24 * 7,
     },
+    cookieEncoding: 'base64url',
     cookies: {
       getAll() {
         return cookieStore.getAll()

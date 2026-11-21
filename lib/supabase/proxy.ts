@@ -9,7 +9,8 @@ export async function updateSession(request: NextRequest) {
   if (!url || !key) return response
 
   const supabase = createServerClient(url, key, {
-    cookieOptions: { secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/' },
+    cookieOptions: { secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 * 7 },
+    cookieEncoding: 'base64url',
     cookies: {
       getAll() {
         return request.cookies.getAll()

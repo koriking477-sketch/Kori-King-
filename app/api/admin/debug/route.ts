@@ -1,13 +1,18 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
 
 // TEMPORARY debug endpoint — remove after fixing admin login.
 // Visit /api/admin/debug while signed in to see exactly what fails.
-export async function GET() {
+export async function GET(request: NextRequest) {
   const result: Record<string, unknown> = {}
+
+  // Log all cookie names the server sees
+  const cookieStore = await cookies()
+  result.cookieNames = cookieStore.getAll().map((c) => c.name)
 
   try {
     const sessionClient = await createClient()
@@ -26,7 +31,6 @@ export async function GET() {
         .maybeSingle()
       result.membershipError = membershipError?.message ?? null
       result.membershipFound = !!membership
-      result.membershipRow = membership
     }
   } catch (e) {
     result.thrown = e instanceof Error ? e.message : String(e)

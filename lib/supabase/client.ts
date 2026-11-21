@@ -13,7 +13,11 @@ export function createClient() {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
+        // Ensure cookies are accessible across the whole domain
+        maxAge: 60 * 60 * 24 * 7, // 7 days
       },
+      // Force cookie storage so the server-side client can read the session
+      cookieEncoding: 'base64url',
     })
   }
   return browserClient
