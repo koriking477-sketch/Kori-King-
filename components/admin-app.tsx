@@ -187,7 +187,7 @@ function hashToSection(hash: string): AdminSection {
 }
 
 export function AdminApp() {
-  const [section, setSection] = useState<AdminSection>(() => hashToSection(typeof window !== 'undefined' ? window.location.hash : ''))
+  const [section, setSection] = useState<AdminSection>('overview')
   const [selectedRoundId, setSelectedRoundId] = useState('')
   const overviewKey = `/api/admin/overview${selectedRoundId ? `?roundId=${encodeURIComponent(selectedRoundId)}` : ''}`
   const { data, error, isLoading, mutate } = useSWR<AdminOverviewResponse, ApiError>(overviewKey, fetchAdminOverview, {
@@ -475,6 +475,10 @@ export function AdminApp() {
 
   // Keep section in sync with the browser back/forward buttons.
   useEffect(() => {
+    // Read initial hash on mount (safe — only runs in the browser).
+    const initial = hashToSection(window.location.hash)
+    if (initial !== 'overview') setSection(initial)
+
     function onPopState() {
       setSection(hashToSection(window.location.hash))
       setActionMessage('')
