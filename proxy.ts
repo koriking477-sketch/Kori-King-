@@ -19,7 +19,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Only routes that depend on the Supabase session need a refresh. Keeping the
-  // matcher narrow avoids extra auth round-trips on the public booking page.
-  matcher: ['/admin/:path*', '/api/admin/:path*', '/api/auth/:path*', '/auth/:path*'],
+  // Match /admin exactly and all sub-paths, plus the API and auth routes.
+  matcher: ['/admin', '/admin/:path*', '/api/admin/:path*', '/api/auth/:path*', '/auth/:path*'],
 }
