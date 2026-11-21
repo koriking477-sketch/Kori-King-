@@ -1,0 +1,1 @@
+drop index if exists public.reservations_one_booking_per_mobile_idx;
