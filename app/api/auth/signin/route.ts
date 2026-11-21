@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
+// Cookie options matching @supabase/ssr defaults
+const COOKIE_OPTIONS = {
+  path: '/',
+  sameSite: 'lax' as const,
+  httpOnly: false,
+  maxAge: 400 * 24 * 60 * 60,
+}
+
 /**
  * Server-side sign-in endpoint.
- * Calls signInWithPassword on the server so the session cookies are written
- * directly into the HTTP response — the browser never touches document.cookie.
- * Returns 200 with { ok: true } on success, or 401/400/500 with { error }.
+ * Uses the plain supabase-js client (no SSR wrapper) to sign in, then
+ * manually encodes the session tokens into Set-Cookie headers on the response.
+ * This matches exactly what @supabase/ssr would write so the proxy and server
+ * client can read the session on subsequent requests.
  */
 export async function POST(request: NextRequest) {
   let body: { email?: unknown; password?: unknown }
@@ -22,27 +31,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 })
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!supabaseUrl || !supabaseKey) {
     return NextResponse.json({ error: 'Server configuration error.' }, { status: 500 })
   }
 
-  // We need to collect the cookies the server client wants to set.
-  const cookiesToSet: Array<{ name: string; value: string; options: Record<string, unknown> }> = []
-
-  const supabase = createServerClient(url, key, {
-    cookieEncoding: 'base64url',
-    cookies: {
-      getAll() {
-        return request.cookies.getAll()
-      },
-      setAll(setCookies) {
-        setCookies.forEach(({ name, value, options }) => {
-          cookiesToSet.push({ name, value, options: options as Record<string, unknown> })
-        })
-      },
-    },
+  // Plain client — session is stored in memory only, not persisted to cookies.
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
   })
 
   const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
@@ -56,7 +53,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No session returned.' }, { status: 401 })
   }
 
-  // Check admin membership before confirming success.
+  // Check admin membership.
   const { createAdminClient } = await import('@/lib/supabase/admin')
   const admin = createAdminClient()
   const { data: membership } = await admin
@@ -66,29 +63,35 @@ export async function POST(request: NextRequest) {
     .maybeSingle()
 
   if (!membership) {
-    // Sign them back out — not an admin.
-    await supabase.auth.signOut()
     return NextResponse.json({ error: 'Admin access is not enabled for this account.' }, { status: 403 })
   }
 
-  // Check ADMIN_EMAIL lock if configured.
+  // Check optional ADMIN_EMAIL lock.
   const configuredEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase()
   if (configuredEmail && data.user.email?.trim().toLowerCase() !== configuredEmail) {
-    await supabase.auth.signOut()
     return NextResponse.json({ error: 'Admin access is not enabled for this account.' }, { status: 403 })
   }
 
-  // Build the response and attach all session cookies.
-  const response = NextResponse.json({ ok: true }, { status: 200 })
-  cookiesToSet.forEach(({ name, value, options }) => {
-    response.cookies.set(name, value, {
-      path: (options.path as string | undefined) ?? '/',
-      sameSite: (options.sameSite as 'lax' | 'strict' | 'none' | undefined) ?? 'lax',
-      secure: (options.secure as boolean | undefined) ?? (process.env.NODE_ENV === 'production'),
-      maxAge: typeof options.maxAge === 'number' ? options.maxAge : 60 * 60 * 24 * 7,
-      httpOnly: false,
-    })
-  })
+  // The storage key @supabase/ssr uses is `sb-<project-ref>-auth-token`.
+  // Extract the project ref from the Supabase URL.
+  const projectRef = new URL(supabaseUrl).hostname.split('.')[0]
+  const storageKey = `sb-${projectRef}-auth-token`
 
+  // Encode the session as @supabase/ssr does with cookieEncoding: 'base64url'.
+  // The value must be base64url(JSON.stringify(session)).
+  const sessionJson = JSON.stringify(data.session)
+  const encoded = 'base64-' + Buffer.from(sessionJson).toString('base64url')
+
+  const isProduction = process.env.NODE_ENV === 'production'
+  const cookieStr = [
+    `${storageKey}=${encoded}`,
+    `Path=${COOKIE_OPTIONS.path}`,
+    `SameSite=${COOKIE_OPTIONS.sameSite}`,
+    `Max-Age=${COOKIE_OPTIONS.maxAge}`,
+    ...(isProduction ? ['Secure'] : []),
+  ].join('; ')
+
+  const response = NextResponse.json({ ok: true }, { status: 200 })
+  response.headers.append('Set-Cookie', cookieStr)
   return response
 }
