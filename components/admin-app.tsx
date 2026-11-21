@@ -524,6 +524,31 @@ export function AdminApp() {
         </section>}
 
         {section === 'rounds' && <div className="admin-grid-two">
+          <section className="admin-card"><h2>Create a new round</h2><p>Set a name, number range and opening window. Numbers are generated automatically.</p>
+            <form className="admin-form" onSubmit={(e) => { e.preventDefault(); void (async () => {
+              const form = e.currentTarget
+              const data = new FormData(form)
+              const name = (data.get('roundName') as string).trim()
+              const first = parseInt(data.get('firstNumber') as string, 10)
+              const last = parseInt(data.get('lastNumber') as string, 10)
+              const opensAt = data.get('opensAt') as string
+              const closesAt = data.get('closesAt') as string
+              await performAction('create-round', '/api/admin/rounds', 'POST', {
+                name, firstNumber: first, lastNumber: last,
+                opensAt: new Date(opensAt).toISOString(),
+                closesAt: new Date(closesAt).toISOString(),
+              })
+              form.reset()
+              await mutate()
+            })() }}>
+              <div className="admin-field"><label>Round name</label><input name="roundName" type="text" placeholder="e.g. Round 1" maxLength={80} required /></div>
+              <div className="admin-field"><label>First number</label><input name="firstNumber" type="number" min={1} max={9999} required /></div>
+              <div className="admin-field"><label>Last number</label><input name="lastNumber" type="number" min={1} max={9999} required /></div>
+              <div className="admin-field"><label>Opens at</label><input name="opensAt" type="datetime-local" required /></div>
+              <div className="admin-field"><label>Closes at</label><input name="closesAt" type="datetime-local" required /></div>
+              <button className="admin-form-button" type="submit" disabled={busyKey === 'create-round'}>Create round</button>
+            </form>
+          </section>
           <section className="admin-card"><h2>Round history</h2><p>Open any round to review its bookings. Delete permanently removes its numbers, booking records, and saved report status.</p>
             {rounds.length ? <div className="admin-round-list">{rounds.map((round) => {
               const expired = new Date(round.closes_at).getTime() <= Date.now()
@@ -536,7 +561,7 @@ export function AdminApp() {
                   <button className="row-action delete-action" type="button" onClick={() => { setActionMessage(''); setActionError(false); setDeleteCandidate(round) }} disabled={busyKey === `delete-round-${round.id}`} aria-label={`Delete round ${round.name} and all its booking records`}><Trash2 aria-hidden="true" /> Delete</button>
                 </div></div>
               </div>
-            })}</div> : <EmptyState title="No rounds yet" body="Rounds are managed directly in the database." />}
+            })}</div> : <EmptyState title="No rounds yet" body="Create a round above to get started." />}
           </section>
         </div>}
 
