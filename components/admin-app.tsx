@@ -180,12 +180,13 @@ async function createPdf(round: BookingRound, bookings: BookingRecord[]) {
   document.save(`${round.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-booking-report.pdf`)
 }
 
+const VALID_SECTIONS: AdminSection[] = ['overview', 'bookings', 'rounds', 'random', 'settings']
+function hashToSection(hash: string): AdminSection {
+  const val = hash.replace('#', '')
+  return (VALID_SECTIONS.includes(val as AdminSection) ? val : 'overview') as AdminSection
+}
+
 export function AdminApp() {
-  const VALID_SECTIONS: AdminSection[] = ['overview', 'bookings', 'rounds', 'random', 'settings']
-  function hashToSection(hash: string): AdminSection {
-    const val = hash.replace('#', '')
-    return (VALID_SECTIONS.includes(val as AdminSection) ? val : 'overview') as AdminSection
-  }
   const [section, setSection] = useState<AdminSection>(() => hashToSection(typeof window !== 'undefined' ? window.location.hash : ''))
   const [selectedRoundId, setSelectedRoundId] = useState('')
   const overviewKey = `/api/admin/overview${selectedRoundId ? `?roundId=${encodeURIComponent(selectedRoundId)}` : ''}`
