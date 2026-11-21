@@ -181,7 +181,12 @@ async function createPdf(round: BookingRound, bookings: BookingRecord[]) {
 }
 
 export function AdminApp() {
-  const [section, setSection] = useState<AdminSection>('overview')
+  const VALID_SECTIONS: AdminSection[] = ['overview', 'bookings', 'rounds', 'random', 'settings']
+  function hashToSection(hash: string): AdminSection {
+    const val = hash.replace('#', '')
+    return (VALID_SECTIONS.includes(val as AdminSection) ? val : 'overview') as AdminSection
+  }
+  const [section, setSection] = useState<AdminSection>(() => hashToSection(typeof window !== 'undefined' ? window.location.hash : ''))
   const [selectedRoundId, setSelectedRoundId] = useState('')
   const overviewKey = `/api/admin/overview${selectedRoundId ? `?roundId=${encodeURIComponent(selectedRoundId)}` : ''}`
   const { data, error, isLoading, mutate } = useSWR<AdminOverviewResponse, ApiError>(overviewKey, fetchAdminOverview, {
@@ -464,7 +469,18 @@ export function AdminApp() {
   function selectSection(next: AdminSection) {
     setSection(next)
     setActionMessage('')
+    window.history.pushState(null, '', `/admin#${next}`)
   }
+
+  // Keep section in sync with the browser back/forward buttons.
+  useEffect(() => {
+    function onPopState() {
+      setSection(hashToSection(window.location.hash))
+      setActionMessage('')
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
 
   if (isLoading && !data) {
     return <main className="admin-login-shell"><section className="admin-login-card"><p className="admin-eyebrow">PERSONAL INFO ADMIN</p><h1 className="admin-login-title">Loading workspace</h1><p className="admin-login-subtitle">Checking your secure session…</p></section></main>
@@ -555,7 +571,7 @@ export function AdminApp() {
               return <div className="admin-round-item" key={round.id}>
                 <div><strong>{round.name}</strong><small>{round.first_number}–{round.last_number} · {dateLabel(round.opens_at)}</small></div>
                 <div className="admin-round-right"><span className={`state-badge ${round.status === 'open' ? 'available' : 'held'}`}>{round.status}</span><div className="admin-round-actions">
-                  <button className="row-action" type="button" onClick={() => { setSelectedRoundId(round.id); setSection('bookings') }}>View</button>
+                  <button className="row-action" type="button" onClick={() => { setSelectedRoundId(round.id); selectSection('bookings') }}>View</button>
                   {expired && <button className="row-action" type="button" onClick={() => void downloadRoundReport(round)} disabled={busyKey === `report-${round.id}`}><ArrowDownToLine aria-hidden="true" /> Report</button>}
                   {round.report_downloaded_at && <button className="row-action delete-action" type="button" onClick={() => void clearRound(round)} disabled={busyKey === `reset-${round.id}`}><Trash2 aria-hidden="true" /> Clear data</button>}
                   <button className="row-action delete-action" type="button" onClick={() => { setActionMessage(''); setActionError(false); setDeleteCandidate(round) }} disabled={busyKey === `delete-round-${round.id}`} aria-label={`Delete round ${round.name} and all its booking records`}><Trash2 aria-hidden="true" /> Delete</button>

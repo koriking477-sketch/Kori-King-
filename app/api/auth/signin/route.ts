@@ -3,12 +3,11 @@ import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
-// Cookie options matching @supabase/ssr defaults
+// Cookie options matching @supabase/ssr defaults (no maxAge = session cookie)
 const COOKIE_OPTIONS = {
   path: '/',
   sameSite: 'lax' as const,
   httpOnly: false,
-  maxAge: 400 * 24 * 60 * 60,
 }
 
 /**
@@ -85,7 +84,7 @@ export async function POST(request: NextRequest) {
     `${storageKey}=${encoded}`,
     `Path=${COOKIE_OPTIONS.path}`,
     `SameSite=${COOKIE_OPTIONS.sameSite}`,
-    `Max-Age=${COOKIE_OPTIONS.maxAge}`,
+    // No Max-Age — this is a session cookie, cleared when the browser closes.
     ...(isProduction ? ['Secure'] : []),
   ].join('; ')
 
