@@ -77,3 +77,11 @@ begin
 end $$;
 
 commit;
+
+-- Grant the service role full access to all tables so the Next.js server
+-- (which uses the service role key) can read and write without RLS blocking it.
+grant all on public.admin_members to service_role;
+grant all on public.booking_rounds to service_role;
+grant all on public.number_slots to service_role;
+grant all on public.reservations to service_role;
+grant all on public.api_rate_limits to service_role;
