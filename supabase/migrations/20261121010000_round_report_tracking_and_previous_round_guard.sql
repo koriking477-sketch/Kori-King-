@@ -40,13 +40,6 @@ begin
   if exists (
     select 1
     from public.booking_rounds r
-    where r.closes_at <= p_opens_at
-  ) then
-    raise exception using errcode = '23514', message = 'previous_round_exists';
-  end if;
-  if exists (
-    select 1
-    from public.booking_rounds r
     where r.status in ('scheduled', 'open')
       and r.opens_at < p_closes_at
       and r.closes_at > p_opens_at

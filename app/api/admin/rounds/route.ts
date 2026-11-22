@@ -41,9 +41,6 @@ export async function POST(request: NextRequest) {
     p_closes_at: closesAt.toISOString(),
   })
   if (error) {
-    if (error.message.includes('previous_round_exists')) {
-      return jsonError('A previous round must be deleted before creating a new round.', 409)
-    }
     if (error.message.includes('round_name_conflict') || error.message.includes('booking_rounds_name_normalized_uidx')) {
       return jsonError('A round with this name already exists.', 409)
     }
