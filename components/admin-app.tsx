@@ -524,19 +524,18 @@ export function AdminApp() {
         </section>}
 
         {section === 'rounds' && <div className="admin-grid-two">
-          <section className="admin-card"><h2>Create a new round</h2><p>Set a name, number range and opening window. Numbers are generated automatically.</p>
+          <section className="admin-card"><h2>Create a new round</h2><p>Enter a name and number range. The round starts immediately when created.</p>
             <form className="admin-form" onSubmit={(e) => { e.preventDefault(); void (async () => {
               const form = e.currentTarget
               const data = new FormData(form)
               const name = (data.get('roundName') as string).trim()
               const first = parseInt(data.get('firstNumber') as string, 10)
               const last = parseInt(data.get('lastNumber') as string, 10)
-              const opensAt = data.get('opensAt') as string
-              const closesAt = data.get('closesAt') as string
+              // Round opens now and closes far in the future — admin deletes it manually.
+              const opensAt = new Date().toISOString()
+              const closesAt = new Date('2099-12-31T23:59:59Z').toISOString()
               await performAction('create-round', '/api/admin/rounds', 'POST', {
-                name, firstNumber: first, lastNumber: last,
-                opensAt: new Date(opensAt).toISOString(),
-                closesAt: new Date(closesAt).toISOString(),
+                name, firstNumber: first, lastNumber: last, opensAt, closesAt,
               })
               form.reset()
               await mutate()
@@ -544,8 +543,6 @@ export function AdminApp() {
               <div className="admin-field"><label>Round name</label><input name="roundName" type="text" placeholder="e.g. Round 1" maxLength={80} required /></div>
               <div className="admin-field"><label>First number</label><input name="firstNumber" type="number" min={1} max={9999} required /></div>
               <div className="admin-field"><label>Last number</label><input name="lastNumber" type="number" min={1} max={9999} required /></div>
-              <div className="admin-field"><label>Opens at</label><input name="opensAt" type="datetime-local" required /></div>
-              <div className="admin-field"><label>Closes at</label><input name="closesAt" type="datetime-local" required /></div>
               <button className="admin-form-button" type="submit" disabled={busyKey === 'create-round'}>Create round</button>
             </form>
           </section>

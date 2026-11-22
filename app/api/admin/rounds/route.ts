@@ -32,20 +32,6 @@ export async function POST(request: NextRequest) {
   }
 
   const { admin } = context
-  const { data: previousRound, error: previousError } = await admin
-    .from('booking_rounds')
-    .select('id,name,closes_at')
-    .lte('closes_at', opensAt.toISOString())
-    .order('closes_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-  if (previousError) return jsonError('Could not check previous rounds.', 503)
-  if (previousRound) {
-    return NextResponse.json(
-      { error: `Delete "${previousRound.name}" before creating a new round.`, requiresRoundDeletion: previousRound.id },
-      { status: 409, headers: { 'Cache-Control': 'no-store' } },
-    )
-  }
 
   const { data: roundId, error } = await admin.rpc('create_booking_round', {
     p_name: name,
