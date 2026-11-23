@@ -446,7 +446,10 @@ export function BookingApp() {
 
       <footer className="site-footer">
         <span>PERSONAL INFO <span className="footer-divider">/</span> Token Booking</span>
-        <span>{activeRound ? `${counts.available} of ${data?.slots.length ?? 0} numbers available` : upcomingRound ? `Next round · ${formatDate(upcomingRound.opens_at)}` : 'Availability updates automatically'}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+          <span>{activeRound ? `${counts.available} of ${data?.slots.length ?? 0} numbers available` : upcomingRound ? `Next round · ${formatDate(upcomingRound.opens_at)}` : 'Availability updates automatically'}</span>
+          <a href="/terms" style={{ fontSize: 12, opacity: 0.7, textDecoration: 'underline' }}>Terms &amp; Conditions</a>
+        </span>
       </footer>
     </main>
   )
