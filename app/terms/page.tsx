@@ -14,7 +14,7 @@ export default function TermsPage() {
       </Link>
 
       <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Terms &amp; Conditions</h1>
-      <p style={{ fontSize: 14, color: '#666', marginBottom: 40 }}>Last updated: November 2026 · Personalinfo.in</p>
+      <p style={{ fontSize: 14, color: '#666', marginBottom: 40 }}>Last updated: November 2026 · <a href="https://personalinfo-zeta.vercel.app" target="_blank" rel="noopener noreferrer" style={{ color: '#54805e' }}>personalinfo-zeta.vercel.app</a></p>
 
       <section style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 10 }}>1. Acceptance of Terms</h2>
@@ -38,7 +38,7 @@ export default function TermsPage() {
 
       <section style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 10 }}>5. Limitation of Liability</h2>
-        <p style={{ lineHeight: 1.75, color: '#333' }}>Personalinfo.in and its operators are not liable for any direct, indirect or consequential losses arising from the use of this service.</p>
+        <p style={{ lineHeight: 1.75, color: '#333' }}>personalinfo-zeta.vercel.app and its operators are not liable for any direct, indirect or consequential losses arising from the use of this service.</p>
       </section>
 
       <section style={{ marginBottom: 32 }}>
